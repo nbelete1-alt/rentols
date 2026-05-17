@@ -1,0 +1,130 @@
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>RenTols - Listings</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    #map {height: 300px; margin-bottom: 20px;}
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">RenTols</span>
+  <a href="index.html">Home</a>
+  <a href="listings.html">Listings</a>
+  <a href="about.html">About</a>
+  <a href="saved.html">Saved</a>
+</nav>
+
+<main>
+  <h1>Listings</h1>
+  <div class="search-bar">
+    <input type="text" id="cityInput" placeholder="City" />
+    <input type="text" id="stateInput" placeholder="State" maxlength="2" />
+    <button onclick="loadListings()">Search</button>
+    <button onclick="saveCity()">Save City</button>
+  </div>
+
+  <p id="message"></p>
+  <p id="error" style="color:red;"></p>
+
+  <div id="map"></div>
+  <div id="results"></div>
+</main>
+
+<script>
+  //Used ai to guide to set up the map using the Leaflet library
+  var map = L.map('map').setView([39.5, -98.35], 4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'OpenStreetMap'
+  }).addTo(map);
+
+  function loadListings() {
+    var city = document.getElementById('cityInput').value;
+    var state = document.getElementById('stateInput').value;
+    // clear old results
+    document.getElementById('error').textContent = '';
+    document.getElementById('message').textContent = 'Loading...';
+    document.getElementById('results').innerHTML = '';
+
+    if (city === '' || state === '') {
+      document.getElementById('error').textContent = 'Please enter a city and state.';
+      return;
+    }
+    // Ai guided me to call our backend to get listings from RentCast API wich was confusing on how i would do it
+    fetch('/listings?city=' + city + '&state=' + state)
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(listings) {
+
+      document.getElementById('message').textContent = '';
+      if (listings.length === 0) {
+        document.getElementById('results').innerHTML = '<p>No listings found.</p>';
+        return;
+      }
+
+      //looped through each listing and create a card for it
+      for (var i = 0; i < listings.length; i++) {
+        var listing = listings[i];
+
+        //AI guided em to add a pin on the map if the listing has a locaiton
+        if (listing.latitude && listing.longitude) {
+          L.marker([listing.latitude, listing.longitude]).addTo(map)
+            .bindPopup(listing.formattedAddress + ' $' + listing.price);
+        }
+        // AI assited me to create a box and add it to the page
+        var card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<h3>' + listing.formattedAddress + '</h3>' +
+          '<p>Rent: $' + listing.price + '/mo</p>' +
+          '<p>Beds: ' + listing.bedrooms + ' | Baths: ' + listing.bathrooms + '</p>' +
+          '<p>Type: ' + listing.propertyType + '</p>';
+        document.getElementById('results').appendChild(card);
+      }
+    });
+
+    // I needed to call the backend to get coordinates for the city so the map can move. So i has AI guide me.
+    fetch('/geocode?city=' + city + '&state=' + state)
+    .then(function(res) {
+      return res.json();
+    })
+    .then(function(coords) {
+    // move the map to the city the user searched
+    map.setView([coords.lat, coords.lng], 11);
+    });
+  }
+  // this function runs when the user clicks Save City
+  function saveCity() {
+    var city = document.getElementById('cityInput').value;
+    var state = document.getElementById('stateInput').value;
+
+    if (city === '' || state === '') {
+      document.getElementById('error').textContent = 'Enter a city and state first.';
+      return;
+    }
+
+    // Ai helped assted me to send a POST request to our backend to save the city in Supabase
+    fetch('/saved', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ city: city, state: state })
+    })
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      if (Array.isArray(data) && data.length > 0) {
+        document.getElementById('message').textContent = city + ', ' + state + ' saved!';
+      } else {
+        document.getElementById('error').textContent = 'Could not save city.';
+      }
+    });
+  }
+</script>
+
+</body>
+</html>

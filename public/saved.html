@@ -1,0 +1,51 @@
+<html>
+<head>
+  <title>RenTols - Saved Cities</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<nav>
+  <span class="logo">RenTols</span>
+  <a href="index.html">Home</a>
+  <a href="listings.html">Listings</a>
+  <a href="about.html">About</a>
+  <a href="saved.html">Saved</a>
+</nav>
+
+<main>
+  <h1>Saved Cities</h1>
+  <p>Cities you have saved.</p>
+
+  <p id="message"></p>
+  <p id="error" style="color:red;"></p>
+  <div id="results"></div>
+</main>
+
+<script>
+  document.getElementById('message').textContent = 'Loading...';
+
+  fetch('saved')
+  .then(function(response) {
+    return response.json();
+  })
+  .then(function(data) {
+    document.getElementById('message').textContent = '';
+    if (data.length === 0) {
+      document.getElementById('results').innerHTML ='<p>No saved cities yet.</p>';
+      return;
+    }
+   // Ai guided and assited me to loop through each saved city and create a card for it
+    for (var i = 0; i < data.length; i++) {
+      var item = data[i];
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = '<h3>'+ item.city + ', ' + item.state + '</h3>' +
+        '<a href="listings.html">View Listings</a>';
+      document.getElementById('results').appendChild(card);
+    }
+  });
+</script>
+
+</body>
+</html>

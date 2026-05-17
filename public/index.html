@@ -1,0 +1,122 @@
+<html>
+<head>
+  <title>RenTols</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<nav>
+  <span class="logo">RenTols</span>
+  <a href="index.html">Home</a>
+  <a href="listings.html">Listings</a>
+  <a href="about.html">About</a>
+  <a href="saved.html">Saved</a>
+</nav>
+
+<main>
+  <h1>Find Your House Today</h1>
+  <p>Search rental listings by city to compare prices.</p>
+
+  <div class="search-bar">
+    <input type="text" id="cityInput" placeholder="City" />
+    <input type="text" id="stateInput" placeholder="State" maxlength="2" />
+    <button onclick="searchListings()">Search</button>
+  </div>
+
+  <p id="message"></p>
+  <p id="error" style="color:red;"></p>
+  <div id="results"></div>
+
+  <div id="chartSection" style="display:none;">
+    <h2>Average Rent by Bedrooms</h2>
+    <canvas id="rentChart"></canvas>
+  </div>
+</main>
+<!--AI assisted and guided me on this from here to ...-->
+<script>
+  let myChart = null;
+
+  async function searchListings() {
+    let city = document.getElementById('cityInput').value;
+    let state = document.getElementById('stateInput').value;
+
+    document.getElementById('error').textContent = '';
+    document.getElementById('message').textContent = 'Loading...';
+    document.getElementById('results').innerHTML = '';
+    document.getElementById('chartSection').style.display = 'none';
+
+    if (!city || !state) {
+      document.getElementById('error').textContent = 'Please enter a city and state.';
+      return;
+    }
+
+    sessionStorage.setItem('city', city);
+    sessionStorage.setItem('state', state);
+
+    let res = await fetch('/listings?city=' + city + '&state=' + state);
+    let data = await res.json();
+
+    document.getElementById('message').textContent = '';
+
+    if (!Array.isArray(data) || data.length === 0) {
+      document.getElementById('results').innerHTML = '<p>No listings found.</p>';
+      return;
+    }
+//untill here
+    let preview = data.slice(0, 5);
+    for (let i = 0; i < preview.length; i++) {
+      let listing = preview[i];
+      let card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = '<h3>' + listing.formattedAddress + '</h3>' +
+        '<p>Rent: $' + listing.price + '/mo</p>' +
+        '<p>Beds: ' + listing.bedrooms + ' | Baths: ' + listing.bathrooms + '</p>' +
+        '<p>Type: ' + listing.propertyType + '</p>';
+      document.getElementById('results').appendChild(card);
+    }
+//I used aI to guide me from here to ...
+    let link = document.createElement('a');
+    link.href = 'listings.html';
+    link.textContent = 'See all ' + data.length + ' listings';
+    document.getElementById('results').appendChild(link);
+
+    buildChart(data);
+  }
+///until here
+  function buildChart(data) {
+    let groups = {};
+    for (let i = 0; i < data.length; i++) {
+      let beds = data[i].bedrooms;
+      if (!groups[beds]) groups[beds] = [];
+      if (data[i].price) groups[beds].push(data[i].price);
+    }
+//AI assted me here
+    let labels = Object.keys(groups).sort();
+    let averages = [];
+    for (let i = 0; i < labels.length; i++) {
+      let prices = groups[labels[i]];
+      let sum = 0;
+      for (let j = 0; j < prices.length; j++) sum += prices[j];
+      averages.push(Math.round(sum / prices.length));
+    }
+
+    document.getElementById('chartSection').style.display = 'block';
+    if (myChart) myChart.destroy();
+///AI asstided me here 
+    var canvas = document.getElementById('rentChart');
+    myChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Avg Rent ($)',
+          data: averages,
+          backgroundColor: '#333'
+        }]
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
