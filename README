@@ -1,0 +1,53 @@
+Title: Rentol
+
+Description: RenTols is a web application that helps college students and 
+first-time renters compare rental prices across different cities. 
+Instead of searching multiple websites, users can search for rental listings in one place, view them on a map, and save cities for later.
+
+Target Broswers:
+Google Chrome
+Firefox
+Microsoft Edge
+Safari
+Chrome
+
+Developer Manual:
+How to intall:
+
+First intall the this "npm install"
+
+Create a .env file in the root folder with these variables:
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
+RENTCAST_KEY=your_rentcast_key
+OPENCAGE_KEY=your_opencage_key
+
+In Supabase, create a table called saved_cities with these columns:
+id (int8)
+city (text)
+state (text)
+
+How to Run the App:
+type "node index.js" in the terminal to start the server then go to your browswer and go to http://localhost:3000
+
+GET /geocode
+Converts a city and state into coordinates using the OpenCage API. Used to move the map to the searched city.
+Query parameters: city, state
+Example: /geocode?city=Austin&state=TX
+Returns: { lat: 30.26, lng: -97.74 }
+
+GET /saved
+Gets all saved cities from the Supabase database.
+Returns an array of saved city objects with city and state.
+
+POST /saved
+Saves a city to the Supabase database.
+Request body: { "city": "Austin", "state": "TX" }
+
+Bugs:
+The RentCast API has a limited data search so if it runs out you need to pay.
+Map pins only appear if the listing includes coordinates from RentCast
+
+Future Developments:
+Add a delete button for saved cities
+Add filters for price range and number of bedrooms
